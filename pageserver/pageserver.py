@@ -13,6 +13,7 @@
   program is run).
 """
 
+import os
 import config    # Configure from .ini files and command line
 import logging   # Better than print statements
 logging.basicConfig(format='%(levelname)s:%(message)s',
@@ -77,6 +78,12 @@ STATUS_FORBIDDEN = "HTTP/1.0 403 Forbidden\n\n"
 STATUS_NOT_FOUND = "HTTP/1.0 404 Not Found\n\n"
 STATUS_NOT_IMPLEMENTED = "HTTP/1.0 401 Not Implemented\n\n"
 
+def isValidURL(string):
+    valid = False
+    if string.endswith('.html') or string.endswith('.css'):
+        if not '..' in string and not '~' in string and not '//' in string:
+            valid = True
+    return valid
 
 def respond(sock):
     """
@@ -98,17 +105,28 @@ def respond(sock):
         transmit(STATUS_FORBIDDEN, sock)
 
     if len(parts) > 1 and parts[0] == "GET":
-        transmit(STATUS_OK, sock)
-        transmit(CAT, sock)
+        response = None
+        if isValidURL(parts[1]):
+            try:
+                responseFile = open('pages'+parts[1], 'r')
+                response = responseFile.read()
+            except FileNotFoundError:
+                transmit(STATUS_NOT_FOUND, sock)
+                transmit("HTTP 404 Error",sock)
+        else:
+            transmit(STATUS_FORBIDDEN, sock)
+            transmit("HTTP 403 Error",sock)            
+
+        if response is not None:
+            transmit(STATUS_OK, sock)
+            transmit(response, sock)
+            responseFile.close()
     else:
-        log.info("Unhandled request: {}".format(request))
-        transmit(STATUS_NOT_IMPLEMENTED, sock)
+        transmit(STATUS_NOT_IMPLEMENTED, sock)        
         transmit("\nI don't handle this request: {}\n".format(request), sock)
 
-    sock.shutdown(socket.SHUT_RDWR)
     sock.close()
     return
-
 
 def transmit(msg, sock):
     """It might take several sends to get the whole message out"""
