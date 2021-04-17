@@ -90,6 +90,13 @@ def respond(sock):
     log.info("Request was {}\n***\n".format(request))
 
     parts = request.split()
+    path = parts [1]
+    if not path.endswith(".html") or not path.endswith(".css"):
+        transmit(STATUS_FORBIDDEN, sock)
+
+    if "//" in path or "~" in path or ".." in path:
+        transmit(STATUS_FORBIDDEN, sock)
+
     if len(parts) > 1 and parts[0] == "GET":
         transmit(STATUS_OK, sock)
         transmit(CAT, sock)
