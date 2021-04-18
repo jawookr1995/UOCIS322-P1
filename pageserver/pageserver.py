@@ -112,10 +112,9 @@ def respond(sock):
                 response = responseFile.read()
             except FileNotFoundError:
                 transmit(STATUS_NOT_FOUND, sock)
-                transmit("HTTP 404 Error-Not Found!",sock)
         else:
             transmit(STATUS_FORBIDDEN, sock)
-            transmit("HTTP 403 Error-Forbidden!",sock)
+
 
         if response is not None:
             transmit(STATUS_OK, sock)
